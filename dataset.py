@@ -2,6 +2,13 @@
 import torch.utils.data as data
 import torch
 import numpy as np
+from math import ceil
+
+def pad_seq(x, base=32):
+    len_out = int(base * ceil(float(x.shape[0])/base))
+    len_pad = len_out - x.shape[0]
+    assert len_pad >= 0
+    return np.pad(x, ((0,len_pad),(0,0)), 'constant'), len_pad
 
 class GetLoader(data.Dataset):
     def __init__(self, emb_list):
@@ -16,15 +23,17 @@ class GetLoader(data.Dataset):
 
         for emb_path in emb_path_list:
             self.emb_paths.append(emb_path[:-1])
-            spec_path = "./../../sroutray/ugp/ugp/spec"+(emb_path[5:])[:-1]
+            spec_path = "./spec2/"+emb_path.split('/')[-2]+'/'+emb_path.split('/')[-1][:-1]
             self.spec_paths.append(spec_path)
 
     def __getitem__(self, item):
         emb_path, spec_path = self.emb_paths[item], self.spec_paths[item]
         emb = np.load(emb_path)
         spec = np.load(spec_path)
+        
+        spec, pad_len = pad_seq(spec)
 
-        return emb, spec, emb_path
+        return emb, spec, pad_len
 
     def __len__(self):
         return self.n_data
