@@ -1,3 +1,4 @@
+import time
 import torch
 from math import ceil
 
@@ -44,13 +45,13 @@ def train_model():
         batch_size=batch_size,
         shuffle=True,
         num_workers=4)
-
-    dataiter = iter(trainloader)
-
     
+    te = time.time()
     for epoch in range(0, epochs):
 
+        dataiter = iter(trainloader)
         mloss = 0
+        tb = time.time()
         for i in range(len(trainloader)):
             loss = 0
             
@@ -74,18 +75,24 @@ def train_model():
 
             mloss = (i*mloss + loss)/(i+1)
             
-            print('Epoch: '+str(epoch)+'/'+str(epochs)+'    Minibatch: '+str(i )+'/'+str(len(trainloader))+'    Loss: '+str(mloss.data.cpu().item()))
+            print('Epoch: '+str(epoch+1)+'/'+str(epochs)+'   Minibatch: '+str(i+1)+'/'+str(len(trainloader))+
+                  '   Loss: '+str(mloss.data.cpu().item())+'   Batch time(s): '+str(time.time()-tb)+
+                  '   Epoch time(min): '+str((time.time()-te)/60))
+            
+            tb = time.time()
             
 
         # Create checkpoint
         with open(log_file, 'a') as fh:
-            fh.write(str(i)+' '+str(mloss)+'\n')
+            fh.write(str(i)+' '+str(mloss.item())+'\n')
 
         chkpt = {'epoch': epoch,
-                 'loss': mloss,
+                 'loss': mloss.item(),
                  'model': G.state_dict(),
                  'optimizer': optimizer.state_dict()}
         torch.save(chkpt, latest)
+        
+        te = time.time()
         
 if __name__=='__main__':
 #     if __name__ == '__main__':
